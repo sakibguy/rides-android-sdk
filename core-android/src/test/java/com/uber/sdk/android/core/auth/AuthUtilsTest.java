@@ -23,22 +23,17 @@
 package com.uber.sdk.android.core.auth;
 
 import android.net.Uri;
-
 import com.uber.sdk.android.core.RobolectricTestBase;
 import com.uber.sdk.core.auth.AccessToken;
 import com.uber.sdk.core.auth.Scope;
 import com.uber.sdk.core.client.SessionConfiguration;
-
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
+import static junit.framework.Assert.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class AuthUtilsTest extends RobolectricTestBase {
@@ -47,7 +42,8 @@ public class AuthUtilsTest extends RobolectricTestBase {
     private static final String BEARER = "Bearer";
 
     private final String ACCESS_TOKEN_STRING = "accessToken1234";
-    private final long EXPIRATION_TIME = 1458770906206l;
+    // GMT: Wednesday, March 23, 2016 10:08:26 PM
+    private final long EXPIRATION_TIME = 1458770906206L;
 
     @Test
     public void stringToScopeCollection_whenOneScopeInString_shouldReturnCollectionOfOneScope() {
@@ -238,6 +234,23 @@ public class AuthUtilsTest extends RobolectricTestBase {
     }
 
     @Test
+    public void isAuthorizationCodePresent_whenPresent_shouldReturnTrue() {
+        String redirectUrl = "http://localhost:1234?code=" + AUTH_CODE;
+
+        assertTrue(AuthUtils.isAuthorizationCodePresent(Uri.parse(redirectUrl)));
+    }
+
+    @Test
+    public void isAuthorizationCodePresent_whenEmpty_shouldReturnFalse() {
+        assertFalse(AuthUtils.isAuthorizationCodePresent(Uri.parse("http://localhost:1234?code=")));
+    }
+
+    @Test
+    public void isAuthorizationCodePresent_whenMissing_shouldReturnFalse() {
+        assertFalse(AuthUtils.isAuthorizationCodePresent(Uri.parse("http://localhost:1234")));
+    }
+
+    @Test
     public void getCodeFromUrl_whenValidAuthorizationCodePassed() throws LoginAuthenticationException {
         String redirectUrl = "http://localhost:1234?code=" + AUTH_CODE;
 
@@ -245,16 +258,15 @@ public class AuthUtilsTest extends RobolectricTestBase {
     }
 
     @Test
-    public void getCodeFromUrl_whenNoValidAuthorizationCodePassed() throws LoginAuthenticationException {
+    public void getCodeFromUrl_whenNoValidAuthorizationCodePassed() {
         String redirectUrl = "http://localhost:1234?access_token=" + ACCESS_TOKEN_STRING
                 + "&expires_in=" + EXPIRATION_TIME + "&scope=history";
 
-
         try {
             AuthUtils.parseAuthorizationCode(Uri.parse(redirectUrl));
-            fail("Should throw an exception");
+            fail("Authorization Code should not be parsable from Access Token response.");
         } catch (LoginAuthenticationException e) {
-            assertThat(e.getAuthenticationError()).isEqualTo(AuthenticationError.INVALID_RESPONSE);
+            // When an access token string is found when parsing authorization code we expect to get an exception.
         }
     }
 
